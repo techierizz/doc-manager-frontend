@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Document Manager</title>
+    <style>
+        /* --- Global Styles --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            /* REMOVED flex properties from body */
+        }
+
+        .container {
+            width: 100%;
+            margin: 0 auto;
+            background-color: #ffffff;
+            overflow: hidden;
+        }
+        
+        /* ADDED !important to ensure this rule always wins */
+        .hidden {
+            display: none !important;
+        }
+
+        h1, h2, h3 {
+            color: #333;
+        }
+
+        /* --- 1. Login Page Styles --- */
+        #login-page {
+            max-width: 400px;
+            margin: 100px auto; /* This centers the login box */
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        #login-page h1 {
+            color: #0056b3;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box; /* Fixes padding issue */
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        /* --- 2. Main Application Layout --- */
+        #main-app {
+            display: flex;
+            min-height: 100vh;
+            max-width: 100%; /* Changed from 1200px to full width */
+            margin: 0; /* Removed margin */
+            border-radius: 0; /* Removed border-radius */
+            box-shadow: none; /* Removed shadow for full-app view */
+        }
+
+        /* --- 2a. Navigation Sidebar --- */
+        .sidebar {
+            width: 240px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            flex-shrink: 0;
+            /* Added position relative for logout button */
+            position: relative;
+            min-height: 100vh;
+        }
+
+        .sidebar h1 {
+            color: white;
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #4a627a;
+            padding-bottom: 15px;
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar nav li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar nav a {
+            display: block;
+            padding: 12px 15px;
+            color: #ecf0f1;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background-color: #34495e;
+        }
+        
+        .sidebar .logout-btn {
+            position: absolute;
+            bottom: 20px;
+            width: 200px;
+        }
+
+        /* --- 2b. Main Content Area --- */
+        .main-content {
+            flex-grow: 1;
+            padding: 40px;
+            background-color: #f9fbfd;
+            overflow-y: auto;
+        }
+
+        .page-content {
+            max-width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .page-header h2 {
+            margin: 0;
+        }
+
+        /* --- 3. Dashboard Page --- */
+        .card-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .card h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        /* Table styles for documents/users */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        /* --- 4. Upload Page --- */
+        .upload-area {
+            border: 3px dashed #007bff;
+            border-radius: 8px;
+            padding: 60px;
+            text-align: center;
+            background-color: #f8faff;
+            color: #007bff;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area.dragover {
+            background-color: #e6f0ff;
+        }
+
+        #file-preview-list {
+            margin-top: 20px;
+        }
+        
+        .file-preview-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f4f4f4;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .file-preview-item span {
+            font-family: monospace;
+        }
+
+        /* --- 5. Search Page --- */
+        .search-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        #search-bar {
+            flex-grow: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        .filter-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .filter-container .form-group {
+            margin-bottom: 0;
+        }
+        
+        .filter-container .form-group label {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .filter-container .form-group input,
+        .filter-container .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        /* --- 6. Admin Panel --- */
+        .admin-tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+        
+        .tab-link {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-link.active {
+            color: #007bff;
+            border-bottom-color: #007bff;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+        #register-page {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-switcher {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .form-switcher a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* --- 7. Modal Styles --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #888;
+        }
+        
+        .modal-body {
+            padding-top: 15px;
+        }
+        
+        .table-wrapper {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .doc-row-link {
+            cursor: pointer;
+            color: #0056b3;
+            font-weight: 600;
+        }
+        .doc-row-link:hover {
+            text-decoration: underline;
+        }
+        .form-control-file,
+        .form-control-text {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box; /* Important */
+        }
+        #share-search-results {
+            border: 1px solid #ddd;
+            max-height: 150px;
+            overflow-y: auto;
+            background: #fff;
+        }
+        .share-result-item {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+        .share-result-item:hover {
+            background: #f0f0f0;
+        }
+    </style>
+        
+</head>
+<body>
+
+    <div class="container" id="login-page">
+        <h1>E-Document Manager</h1>
+        <div class="form-group">
+            <label for="login-username">Username</label>
+            <input type="text" id="login-username" placeholder="Enter your username">
+        </div>
+        <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Enter your password">
+        </div>
+        <button class="btn" onclick="login()">Login</button>
+        <p class="form-switcher">
+            Don't have an account? <a href="#" onclick="toggleAuthForms()">Register here</a>
+        </p>
+    </div>
+
+    <div class="container hidden" id="register-page">
+        <h1>Create Account</h1>
+        <div class="form-group">
+            <label for="register-username">Username</label>
+            <input type="text" id="register-username" placeholder="e.g., admin_user">
+        </div>
+        <div class="form-group">
+            <label for="register-email">Email</label>
+            <input type="email" id="register-email" placeholder="e.g., admin@example.com">
+        </div>
+        <div class="form-group">
+            <label for="register-password">Password</label>
+            <input type="password" id="register-password" placeholder="Choose a strong password">
+        </div>
+        <button class="btn" onclick="register()">Create Account</button>
+        <p class="form-switcher">
+            Already have an account? <a href="#" onclick="toggleAuthForms()">Login here</a>
+        </p>
+    </div>
+
+    <div class="container hidden" id="main-app">
+        
+        <aside class="sidebar">
+            <h1>E-Document<br>Manager</h1>
+            <nav>
+                <ul>
+                    <li><a href="#" id="nav-dashboard" class="nav-link active" onclick="showPage('dashboard', this)">Dashboard</a></li>
+                    <li><a href="#" id="nav-upload" class="nav-link" onclick="showPage('upload', this)">Upload Document</a></li>
+                    <li><a href="#" id="nav-search" class="nav-link" onclick="showPage('search', this)">Search Documents</a></li>
+                    <li><a href="#" id="nav-admin" class="nav-link" onclick="showPage('admin', this)">Admin Panel</a></li>
+                </ul>
+            </nav>
+            <button class="btn btn-secondary logout-btn" onclick="logout()">Logout</button>
+        </aside>
+        
+        <main class="main-content">
+        
+            <div id="dashboard-page" class="page-content">
+                <div class="page-header">
+                    <h2>Welcome, Admin!</h2>
+                    <button class="btn" onclick="showPage('upload', document.getElementById('nav-upload'))">
+                        Quick Upload
+                    </button>
+                </div>
+                
+                <div class="card-container">
+                    <div class="card">
+                        <h3>Recent Documents</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Uploaded By</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-doc-list">
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card">
+                        <h3>Notifications</h3>
+                        <ul>
+                            <li>'Viewer User' downloaded 'Project_Alpha_Specs.docx'</li>
+                            <li>'Editor User' uploaded a new version of 'Budget_2026.xlsx'</li>
+                            <li>Your review is required for 'Legal_Contract.pdf'</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="upload-page" class="page-content hidden">
+                <div class="page-header">
+                    <h2>Upload New Document</h2>
+                </div>
+                
+                <h3>Drag-and-Drop Upload</h3>
+                <div class="upload-area" id="drop-area">
+                    Drag & drop files here, or click to select files.
+                    <br><small>(Max 5GB. Allowed types: PDF, DOCX, XLSX, PPTX, TXT)</small>
+                </div>
+                <input type="file" id="file-input" multiple class="hidden">
+                
+                <div id="file-preview-list">
+                    </div>
+                
+                <h3>Metadata</h3>
+                <div class="form-group">
+                    <label for="tags">Tags (comma-separated)</label>
+                    <input type="text" id="tags" placeholder="e.g., budget, q4, confidential">
+                </div>
+                
+                <button class="btn" onclick="alert('This is a prototype. File upload is not functional.')">Start Upload</button>
+            </div>
+            
+            <div id="search-page" class="page-content hidden">
+                <div class="page-header">
+                    <h2>Search Documents</h2>
+                </div>
+                
+                <div class="search-container">
+                    <input type="text" id="search-bar" placeholder="Search by keyword, content, or file name...">
+                    <button class="btn" onclick="searchDocuments()">Search</button>
+                </div>
+
+                <h3>Filters</h3>
+                <div class="filter-container">
+                    <div class="form-group">
+                        <label for="filter-uploader">Uploader</label>
+                        <input type="text" id="filter-uploader" placeholder="e.g., admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-date-from">Date From</label>
+                        <input type="date" id="filter-date-from">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-date-to">Date To</label>
+                        <input type="date" id="filter-date-to">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-type">File Type</label>
+                        <select id="filter-type">
+                            <option value="">All</option>
+                            <option value="pdf">PDF</option>
+                            <option value="docx">DOCX</option>
+                            <option value="xlsx">XLSX</option>
+                            <option value="pptx">PPTX</option>
+                            <option value="txt">TXT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-tags">Tags</label>
+                        <input type="text" id="filter-tags" placeholder="e.g., budget">
+                    </div>
+                </div>
+                
+                <h3>Search Results</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Uploader</th>
+                            <th>File Type</th>
+                            <th>Last Modified</th>
+                            <th>Tags</th>
+                        </tr>
+                    </thead>
+                    <tbody id="search-results-body">
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="admin-page" class="page-content hidden">
+                <div class="page-header">
+                    <h2>Admin Panel</h2>
+                </div>
+                
+                <div class="admin-tabs">
+                    <span class="tab-link active" onclick="showAdminTab('user-management', this)">User Management</span>
+                    <span class="tab-link" onclick="showAdminTab('audit-log', this)">Audit Log Viewer</span>
+                </div>
+                
+                <div id="user-management" class="tab-content active">
+                    <h3>All Users</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Role</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-management-body">
+                            <tr>
+                                <td>admin</td>
+                                <td>Admin</td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" onclick="alert('Prototype only')">Edit</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>editor.user</td>
+                                <td>Editor</td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" onclick="alert('Prototype only')">Edit</button>
+                                    <button class="btn btn-danger btn-sm" onclick="alert('Prototype only')">Delete</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>viewer.user</td>
+                                <td>Viewer</td>
+                                <td>
+                                    <button class="btn btn-secondary btn-sm" onclick="alert('Prototype only')">Edit</button>
+                                    <button class="btn btn-danger btn-sm" onclick="alert('Prototype only')">Delete</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="audit-log" class="tab-content">
+                    <h3>System Audit Log</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2025-10-28 10:34:01</td>
+                                <td>viewer.user</td>
+                                <td>DOWNLOAD</td>
+                                <td>'Project_Alpha_Specs.docx'</td>
+                            </tr>
+                            <tr>
+                                <td>2025-10-28 10:30:15</td>
+                                <td>editor.user</td>
+                                <td>UPLOAD_VERSION</td>
+                                <td>'Budget_2026.xlsx' (v2)</td>
+                            </tr>
+                            <tr>
+                                <td>2025-10-28 09:15:45</td>
+                                <td>admin</td>
+                                <td>LOGIN</td>
+                                <td>Successful login</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+            </div>
+            
+        </main>
+    </div>
+
+    <div id="details-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-doc-title">Document Details</h3>
+            <button class="modal-close" onclick="hideDocumentDetails()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <h4>Version History (SRS 4.4)</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>File Name</th>
+                            <th>Uploaded By</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="version-history-body">
+                        <!-- JS will fill this in -->
+                    </tbody>
+                </table>
+            </div>
+            <hr>
+            <div id="new-version-upload-form">
+                <h4>Upload New Version (v2, v3, etc.)</h4>
+                <div class="form-group">
+                    <label for="new-version-file-input">Select File</label>
+                    <input type="file" id="new-version-file-input" class="form-control-file">
+                </div>
+                <div class="form-group">
+                    <label for="new-version-comment">Upload Comment (Optional)</label>
+                    <input type="text" id="new-version-comment" class="form-control-text" placeholder="e.g., Fixed typos in section 2">
+                </div>
+                <button class="btn" onclick="uploadNewVersion()">Upload v-New</button>
+            </div>
+            <hr>
+            <div id="document-sharing-form">
+                <h4>Share Document (SRS 4.3)</h4>
+                    
+                    <h5>Who has access:</h5>
+                    <div class="table-wrapper" style="max-height: 150px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Permissions</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="share-permission-list">
+                                </tbody>
+                        </table>
+                    </div>
+                    
+                    <h5 style="margin-top: 15px;">Invite new user:</h5>
+                    <div class="form-group">
+                        <label for="share-user-search">Search for user by name</label>
+                        <input type="text" id="share-user-search" class="form-control-text" onkeyup="searchUsersToShare(this.value)">
+                        <div id="share-search-results">
+                            </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Permissions:</label>
+                        <input type="checkbox" id="share-can-view" checked> <label for="share-can-view">Can View</label>
+                        <input type="checkbox" id="share-can-edit" style="margin-left: 10px;"> <label for="share-can-edit">Can Edit</label>
+                </div>
+            </div>
+            <!-- We will add the "Upload New Version" form here in the next step -->
+        </div>
+    </div>
+    </div>
+
+    <script>
+        
+        const API_BASE_URL = 'http://localhost:5000/api';
+        const pages = document.querySelectorAll('.page-content');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const loginPage = document.getElementById('login-page');
+        const registerPage = document.getElementById('register-page');
+        const mainApp = document.getElementById('main-app');
+        const detailsModal = document.getElementById('details-modal');
+        
+        let filesToUpload = [];
+        let shareSearchTimeout;
+
+        
+        function showPage(pageId, navElement) { /* ... (Same as before) ... */ 
+            pages.forEach(page => page.classList.add('hidden'));
+            navLinks.forEach(link => link.classList.remove('active'));
+            document.getElementById(pageId + '-page').classList.remove('hidden');
+            if (navElement) {
+                navElement.classList.add('active');
+            }
+            if (pageId === 'dashboard') {
+                loadDashboardData();
+            }
+            if (pageId === 'admin') {
+                loadAdminPanelData();
+            }
+        }
+        
+        function toggleAuthForms() { /* ... (Same as before) ... */ 
+            loginPage.classList.toggle('hidden');
+            registerPage.classList.toggle('hidden');
+        }
+
+        
+        async function register() { /* ... (Same as before) ... */ 
+            const username = document.getElementById('register-username').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            if (!username || !email || !password) {
+                alert('Please fill in all fields.');
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password }),
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    toggleAuthForms();
+                } else {
+                    alert(`Registration Failed: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Register error:', error);
+                alert('An error occurred. Is the backend server running?');
+            }
+        }
+        async function login() { /* ... (Same as before) ... */ 
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            if (!username || !password) {
+                alert('Please enter both username and password.');
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', data.username);
+                    localStorage.setItem('role', data.role);
+                    document.querySelector('#dashboard-page .page-header h2').textContent = `Welcome, ${data.username}!`;
+                    if (data.role !== 'Admin') {
+                        document.getElementById('nav-admin').style.display = 'none';
+                    } else {
+                        document.getElementById('nav-admin').style.display = 'block';
+                    }
+                    loginPage.classList.add('hidden');
+                    registerPage.classList.add('hidden');
+                    mainApp.classList.remove('hidden');
+                    showPage('dashboard', document.getElementById('nav-dashboard'));
+                } else {
+                    alert(`Login Failed: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('An error occurred. Is the backend server running?');
+            }
+        }
+        function logout() { /* ... (Same as before) ... */ 
+            localStorage.clear();
+            mainApp.classList.add('hidden');
+            loginPage.classList.remove('hidden');
+        }
+
+        
+        async function uploadFiles() { /* ... (Same as before) ... */ 
+            const tags = document.getElementById('tags').value;
+            const token = localStorage.getItem('token');
+            if (filesToUpload.length === 0) {
+                alert('Please select a file to upload.');
+                return;
+            }
+            const file = filesToUpload[0]; 
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('tags', tags);
+            try {
+                const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+                    method: 'POST',
+                    headers: { 'x-auth-token': token },
+                    body: formData,
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    document.getElementById('tags').value = '';
+                    document.getElementById('file-preview-list').innerHTML = '';
+                    filesToUpload = [];
+                    showPage('dashboard', document.getElementById('nav-dashboard'));
+                } else {
+                    alert(`Upload Failed: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('An error occurred during upload.');
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => { /* ... (Same as before) ... */ 
+             const uploadButton = document.querySelector('#upload-page .btn');
+             if(uploadButton) {
+                uploadButton.onclick = uploadFiles;
+             }
+        });
+        
+        
+        async function searchDocuments() { /* ... (Same as before) ... */ 
+            const token = localStorage.getItem('token');
+            const params = new URLSearchParams();
+            if (document.getElementById('search-bar').value) params.append('keyword', document.getElementById('search-bar').value);
+            if (document.getElementById('filter-uploader').value) params.append('uploader', document.getElementById('filter-uploader').value);
+            if (document.getElementById('filter-date-from').value) params.append('date_from', document.getElementById('filter-date-from').value);
+            if (document.getElementById('filter-date-to').value) params.append('date_to', document.getElementById('filter-date-to').value);
+            if (document.getElementById('filter-type').value) params.append('type', document.getElementById('filter-type').value);
+            if (document.getElementById('filter-tags').value) params.append('tags', document.getElementById('filter-tags').value);
+            try {
+                const response = await fetch(`${API_BASE_URL}/documents/search?${params.toString()}`, {
+                    method: 'GET',
+                    headers: { 'x-auth-token': token }
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    renderSearchResults(data.results);
+                } else {
+                    alert(`Search Failed: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                alert('An error occurred during search.');
+            }
+        }
+        function renderSearchResults(results) { /* ... (Same as before) ... */ 
+            const resultsBody = document.getElementById('search-results-body');
+            resultsBody.innerHTML = '';
+            if (results.length === 0) {
+                resultsBody.innerHTML = '<tr><td colspan="5">No documents found.</td></tr>';
+                return;
+            }
+            results.forEach(doc => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="doc-row-link" onclick="showDocumentDetails(${doc.document_id}, '${doc.file_name}')">${doc.file_name}</span></td>
+                    <td>${doc.uploader}</td>
+                    <td>${doc.file_type}</td>
+                    <td>${formatDate(doc.last_modified)}</td>
+                    <td>${doc.tags || ''}</td>
+                `;
+                resultsBody.appendChild(row);
+            });
+        }
+        function formatDate(dateString) { /* ... (Same as before) ... */ 
+            const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+
+        
+        const adminTabs = document.querySelectorAll('.tab-content');
+        const adminTabLinks = document.querySelectorAll('.tab-link');
+        function showAdminTab(tabId, tabElement) { /* ... (Same as before) ... */ }
+        function showAdminTab(tabId, tabElement) { /* ... (Same as before) ... */ 
+            adminTabs.forEach(tab => tab.classList.remove('active'));
+            adminTabLinks.forEach(link => link.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            tabElement.classList.add('active');
+            if (tabId === 'user-management') {
+                loadAdminPanelData();
+            }
+        }
+        async function loadAdminPanelData() { /* ... (Same as before) ... */ }
+        function renderUserManagementTable(users) { /* ... (Same as before) ... */ }
+        async function promptUpdateRole(userId, currentRole) { /* ... (Same as before) ... */ }
+        async function deleteUser(userId, username) { /* ... (Same as before) ... */ }
+        
+        
+        async function loadDashboardData() { /* ... (Same as before) ... */ 
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_BASE_URL}/documents/my-documents`, {
+                    method: 'GET',
+                    headers: { 'x-auth-token': token }
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    renderDashboardTable(data.documents);
+                } else {
+                    alert(`Error loading dashboard: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Dashboard load error:', error);
+            }
+        }
+        function renderDashboardTable(documents) { /* ... (Same as before) ... */ 
+            const tableBody = document.getElementById('dashboard-doc-list');
+            tableBody.innerHTML = '';
+            if (!documents || documents.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3">You have not uploaded any documents.</td></tr>';
+                return;
+            }
+            documents.forEach(doc => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><span class="doc-row-link" onclick="showDocumentDetails(${doc.document_id}, '${doc.file_name}')">${doc.file_name}</span></td>
+                    <td>${doc.uploader}</td>
+                    <td>${formatDate(doc.last_modified)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        async function showDocumentDetails(documentId, fileName) { /* ... (Same as before) ... */ 
+            const token = localStorage.getItem('token');
+            document.getElementById('modal-doc-title').textContent = fileName;
+            detailsModal.setAttribute('data-current-doc-id', documentId);
+
+            document.getElementById('share-user-search').value = '';
+            document.getElementById('share-search-results').innerHTML = '';
+
+            try {
+                const versionsPromise = fetch(`${API_BASE_URL}/documents/${documentId}/versions`, {
+                    method: 'GET',
+                    headers: { 'x-auth-token': token }
+                });
+                const permissionsPromise = fetch(`${API_BASE_URL}/documents/${documentId}/permissions`, {
+                    method: 'GET',
+                    headers: { 'x-auth-token': token }
+                });
+                const [versionsResponse, permissionsResponse] = await Promise.all([versionsPromise, permissionsPromise]);
+                const versionsData = await versionsResponse.json();
+                const permissionsData = await permissionsResponse.json();
+                if (versionsResponse.ok) {
+                    renderVersionHistory(versionsData.versions);
+                } else {
+                    alert(`Error fetching versions: ${versionsData.message}`);
+                }
+                
+                if (permissionsResponse.ok) {
+                    renderSharePermissions(permissionsData.permissions);
+                } else {
+                    alert(`Error fetching permissions: ${permissionsData.message}`);
+                }
+                detailsModal.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error fetching versions:', error);
+            }
+        }
+        
+        
+        function renderVersionHistory(versions) {
+            const tableBody = document.getElementById('version-history-body');
+            tableBody.innerHTML = '';
+            if (!versions || versions.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6">No version history found.</td></tr>';
+                return;
+            }
+            
+            const currentVersionId = versions[0].current_version_id;
+            const documentId = detailsModal.getAttribute('data-current-doc-id');
+            
+            versions.forEach(v => {
+                const row = document.createElement('tr');
+                const isCurrent = (v.version_id === currentVersionId);
+                
+                
+                let restoreButton = '';
+                if (!isCurrent) {
+                    restoreButton = `<button class="btn btn-sm" 
+                                             onclick="restoreVersion(${documentId}, ${v.version_id})">
+                                        Restore
+                                     </button>`;
+                }
+                
+                row.innerHTML = `
+                    <td>v${v.version_number}</td>
+                    <td>${v.file_name}</td>
+                    <td>${v.uploader}</td>
+                    <td>${formatDate(v.created_at)}</td>
+                    <td>${isCurrent ? '<strong>Current</strong>' : ''}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" 
+                                onclick="downloadVersion(${v.version_id}, '${v.file_name}')">
+                            Download
+                        </button>
+                        ${restoreButton}
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        function hideDocumentDetails() { /* ... (Same as before) ... */ 
+            detailsModal.classList.add('hidden');
+        }
+        async function downloadVersion(versionId, fileName) { /* ... (Same as before) ... */ 
+            const documentId = detailsModal.getAttribute('data-current-doc-id');
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_BASE_URL}/documents/${documentId}/versions/${versionId}/download`, {
+                    method: 'GET',
+                    headers: { 'x-auth-token': token }
+                });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                } else {
+                    const data = await response.json();
+                    alert(`Download Failed: ${data.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('An error occurred during download.');
+            }
+        }
+        async function uploadNewVersion() { /* ... (Same as before) ... */ 
+            const token = localStorage.getItem('token');
+            const documentId = detailsModal.getAttribute('data-current-doc-id');
+            const fileInput = document.getElementById('new-version-file-input');
+            const comment = document.getElementById('new-version-comment').value;
+            if (fileInput.files.length === 0) {
+                alert('Please select a file to upload.');
+                return;
+            }
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('uploadComment', comment);
+            try {
+                const response = await fetch(`${API_BASE_URL}/documents/${documentId}/upload-version`, {
+                    method: 'POST',
+                    headers: { 'x-auth-token': token },
+                    body: formData,
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    const docTitle = document.getElementById('modal-doc-title').textContent;
+                    await showDocumentDetails(documentId, docTitle); 
+                    fileInput.value = '';
+                    document.getElementById('new-version-comment').value = '';
+                } else {
+                    alert(`Upload Failed: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('New version upload error:', error);
+                alert('An error occurred during upload.');
+            }
+        }
+        
+        
+        async function restoreVersion(documentId, versionId) {
+            if (!confirm('Are you sure you want to restore this version as the current version?')) {
+                return;
+            }
+            
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_BASE_URL}/documents/${documentId}/versions/${versionId}/restore`, {
+                    method: 'PUT',
+                    headers: {
+                        'x-auth-token': token
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert(data.message);
+                    
+                    
+                    const docTitle = document.getElementById('modal-doc-title').textContent;
+                    await showDocumentDetails(documentId, docTitle);
+                } else {
+                    alert(`Restore Failed: ${data.message}`);
+                }
+                
+            } catch (error) {
+                console.error('Restore version error:', error);
+                alert('An error occurred during restore.');
+            }
+        }
+
+        /* --- (All other functions: Admin Panel, Drag/Drop, etc.) --- */
+        /* ... (The Admin, Drag/Drop functions are just collapsed here for brevity) ... */
+
+        
+        async function loadAdminPanelData() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/users`, {
+                    method: 'GET',
+                    headers: { 'x-auth-token': token }
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    renderUserManagementTable(data.users);
+                } else {
+                    alert(`Error loading users: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Admin load error:', error);
+                alert('An error occurred loading admin data.');
+            }
+        }
+        function renderUserManagementTable(users) {
+            const tableBody = document.getElementById('user-management-body');
+            tableBody.innerHTML = '';
+            const currentUserId = localStorage.getItem('username');
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                const isSelf = (user.username === currentUserId);
+                const disabledAttr = isSelf ? 'disabled' : '';
+                row.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${user.role}</td>
+                    <td>${formatDate(user.created_at)}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" ${disabledAttr} 
+                                onclick="promptUpdateRole(${user.user_id}, '${user.role}')">
+                            Edit Role
+                        </button>
+                        <button class="btn btn-danger btn-sm" ${disabledAttr} 
+                                onclick="deleteUser(${user.user_id}, '${user.username}')">
+                            Delete
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        async function promptUpdateRole(userId, currentRole) {
+            const newRole = prompt(`Enter new role for this user (Admin, Editor, Viewer):`, currentRole);
+            if (newRole && newRole !== currentRole && ['Admin', 'Editor', 'Viewer'].includes(newRole)) {
+                const token = localStorage.getItem('token');
+                try {
+                    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-auth-token': token
+                        },
+                        body: JSON.stringify({ role: newRole })
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert(data.message);
+                        loadAdminPanelData();
+                    } else {
+                        alert(`Error: ${data.message}`);
+                    }
+                } catch (error) {
+                    console.error('Update role error:', error);
+                }
+            } else if (newRole) {
+                alert('Invalid role. Must be one of: Admin, Editor, Viewer');
+            }
+        }
+        async function deleteUser(userId, username) {
+            if (confirm(`Are you sure you want to delete the user "${username}"? This cannot be undone.`)) {
+                const token = localStorage.getItem('token');
+                try {
+                    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+                        method: 'DELETE',
+                        headers: { 'x-auth-token': token }
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert(data.message);
+                        loadAdminPanelData();
+                    } else {
+                        alert(`Error: ${data.message}`);
+                    }
+                } catch (error) {
+                    console.error('Delete user error:', error);
+                }
+            }
+        }
+
+        function renderSharePermissions(permissions) {
+            const listBody = document.getElementById('share-permission-list');
+            listBody.innerHTML = ''; // Clear old list
+            
+            if (permissions.length === 0) {
+                listBody.innerHTML = '<tr><td colspan="3">Only you (the owner) have access.</td></tr>';
+                return;
+            }
+            
+            permissions.forEach(p => {
+                const row = document.createElement('tr');
+                let perms = [];
+                if (p.can_view) perms.push('View');
+                if (p.can_edit) perms.push('Edit');
+                
+                row.innerHTML = `
+                    <td>${p.username}</td>
+                    <td>${perms.join(', ')}</td>
+                    <td><button class="btn btn-danger btn-sm" disabled>Remove</button></td>
+                `;
+                listBody.appendChild(row);
+            });
+        }
+        
+        // 2. Search for users to share with (with debouncing)
+        function searchUsersToShare(query) {
+            clearTimeout(shareSearchTimeout); // Clear previous timer
+            const resultsBox = document.getElementById('share-search-results');
+            
+            if (query.length < 2) {
+                resultsBox.innerHTML = '';
+                return;
+            }
+            
+            // Wait 300ms after user stops typing
+            shareSearchTimeout = setTimeout(async () => {
+                const token = localStorage.getItem('token');
+                try {
+                    const response = await fetch(`${API_BASE_URL}/users/search?username=${query}`, {
+                        method: 'GET',
+                        headers: { 'x-auth-token': token }
+                    });
+                    
+                    const data = await response.json();
+                    if (!response.ok) {
+                        resultsBox.innerHTML = `<div class="share-result-item error">${data.message}</div>`;
+                        return;
+                    }
+                    
+                    resultsBox.innerHTML = ''; // Clear old results
+                    if (data.users.length === 0) {
+                        resultsBox.innerHTML = `<div class="share-result-item">No users found.</div>`;
+                        return;
+                    }
+                    
+                    data.users.forEach(user => {
+                        const item = document.createElement('div');
+                        item.className = 'share-result-item';
+                        item.textContent = user.username;
+                        item.onclick = () => selectUserToShare(user.user_id, user.username);
+                        resultsBox.appendChild(item);
+                    });
+                    
+                } catch (error) {
+                    console.error('User search error:', error);
+                }
+            }, 300);
+        }
+        
+        // 3. Handle clicking a user from the search results
+        function selectUserToShare(userId, username) {
+            if (!confirm(`Share this document with ${username}?`)) {
+                return;
+            }
+            
+            const canView = document.getElementById('share-can-view').checked;
+            const canEdit = document.getElementById('share-can-edit').checked;
+            
+            shareDocument(userId, canView, canEdit);
+        }
+
+        // 4. Send the "share" request to the API
+        async function shareDocument(userId, canView, canEdit) {
+            const token = localStorage.getItem('token');
+            const documentId = detailsModal.getAttribute('data-current-doc-id');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/documents/${documentId}/share`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-auth-token': token
+                    },
+                    body: JSON.stringify({
+                        share_with_user_id: userId,
+                        can_view: canView,
+                        can_edit: canEdit
+                    })
+                });
+                
+                const data = await response.json();
+                alert(data.message);
+                
+                if (response.ok) {
+                    // Refresh the modal to show the new permission
+                    const docTitle = document.getElementById('modal-doc-title').textContent;
+                    await showDocumentDetails(documentId, docTitle);
+                }
+                
+            } catch (error) {
+                console.error('Share document error:', error);
+            }
+        }
+
+        
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        const filePreviewList = document.getElementById('file-preview-list');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'), false);
+        });
+        dropArea.addEventListener('drop', handleDrop, false);
+        dropArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        function handleDrop(e) {
+            let dt = e.dataTransfer;
+            let files = dt.files;
+            handleFiles(files);
+        }
+        function handleFiles(files) {
+            filesToUpload = [...files];
+            filePreviewList.innerHTML = ''; 
+            if (filesToUpload.length > 0) {
+                 const file = filesToUpload[0];
+                 const previewItem = document.createElement('div');
+                 previewItem.className = 'file-preview-item';
+                 previewItem.innerHTML = `<span>${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span> <button class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); filesToUpload = [];">Remove</button>`;
+                 filePreviewList.appendChild(previewItem);
+            }
+        }
+    </script>
+</body>
+</html>
