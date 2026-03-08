@@ -814,10 +814,10 @@
                 });
                 const data = await response.json();
                 if (response.ok) {
-                    alert(data.message);
+                    alert("Registration successful! You can now login.");
                     toggleAuthForms();
                 } else {
-                    alert(`Registration Failed: ${data.message}`);
+                    alert(data.message);
                 }
             } catch (error) {
                 console.error('Register error:', error);
@@ -1495,6 +1495,7 @@
 </body>
 
 </html>
+
 
 
 
