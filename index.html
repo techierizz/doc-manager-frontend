@@ -758,14 +758,12 @@
                         <input type="checkbox" id="share-can-edit" style="margin-left: 10px;"> <label for="share-can-edit">Can Edit</label>
                 </div>
             </div>
-            <!-- We will add the "Upload New Version" form here in the next step -->
         </div>
     </div>
     </div>
 
     <script>
         
-        // const API_BASE_URL = 'http://localhost:5000/api';
         const API_BASE_URL = 'https://cidoc.onrender.com/api';
         const pages = document.querySelectorAll('.page-content');
         const navLinks = document.querySelectorAll('.nav-link');
@@ -934,6 +932,7 @@
                 alert('An error occurred during search.');
             }
         }
+        
         function renderSearchResults(results) { /* ... (Same as before) ... */ 
             const resultsBody = document.getElementById('search-results-body');
             resultsBody.innerHTML = '';
@@ -953,6 +952,7 @@
                 resultsBody.appendChild(row);
             });
         }
+        
         function formatDate(dateString) { /* ... (Same as before) ... */ 
             const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' };
             return new Date(dateString).toLocaleDateString(undefined, options);
@@ -981,10 +981,32 @@
             }
         }
 
+        function renderAuditLogTable(logs) {
+            const tableBody = document.querySelector('#audit-log table tbody');
+            tableBody.innerHTML = '';
+
+            if (!logs || logs.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4">No logs found.</td></tr>';
+                return;
+            }
+
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                const time = new Date(log.timestamp).toLocaleString();
+        
+                row.innerHTML = `
+                    <td>${time}</td>
+                    <td><strong>${log.username || 'System'}</strong></td>
+                    <td><span class="badge">${log.action_type}</span></td>
+                    <td>${log.details} ${log.target_file ? `(${log.target_file})` : ''}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
         
         const adminTabs = document.querySelectorAll('.tab-content');
         const adminTabLinks = document.querySelectorAll('.tab-link');
-        function showAdminTab(tabId, tabElement) { /* ... (Same as before) ... */ }
         function showAdminTab(tabId, tabElement) { /* ... (Same as before) ... */ 
             adminTabs.forEach(tab => tab.classList.remove('active'));
             adminTabLinks.forEach(link => link.classList.remove('active'));
@@ -994,11 +1016,6 @@
                 loadAdminPanelData();
             }
         }
-        async function loadAdminPanelData() { /* ... (Same as before) ... */ }
-        function renderUserManagementTable(users) { /* ... (Same as before) ... */ }
-        async function promptUpdateRole(userId, currentRole) { /* ... (Same as before) ... */ }
-        async function deleteUser(userId, username) { /* ... (Same as before) ... */ }
-        
         
         async function loadDashboardData() { /* ... (Same as before) ... */ 
             const token = localStorage.getItem('token');
@@ -1017,6 +1034,7 @@
                 console.error('Dashboard load error:', error);
             }
         }
+        
         function renderDashboardTable(documents) { /* ... (Same as before) ... */ 
             const tableBody = document.getElementById('dashboard-doc-list');
             tableBody.innerHTML = '';
@@ -1034,6 +1052,7 @@
                 tableBody.appendChild(row);
             });
         }
+        
         async function showDocumentDetails(documentId, fileName) { /* ... (Same as before) ... */ 
             const token = localStorage.getItem('token');
             document.getElementById('modal-doc-title').textContent = fileName;
@@ -1113,9 +1132,11 @@
                 tableBody.appendChild(row);
             });
         }
+        
         function hideDocumentDetails() { /* ... (Same as before) ... */ 
             detailsModal.classList.add('hidden');
         }
+        
         async function downloadVersion(versionId, fileName) { /* ... (Same as before) ... */ 
             const documentId = detailsModal.getAttribute('data-current-doc-id');
             const token = localStorage.getItem('token');
@@ -1144,6 +1165,7 @@
                 alert('An error occurred during download.');
             }
         }
+        
         async function uploadNewVersion() { /* ... (Same as before) ... */ 
             const token = localStorage.getItem('token');
             const documentId = detailsModal.getAttribute('data-current-doc-id');
@@ -1179,7 +1201,6 @@
             }
         }
         
-        
         async function restoreVersion(documentId, versionId) {
             if (!confirm('Are you sure you want to restore this version as the current version?')) {
                 return;
@@ -1211,10 +1232,6 @@
                 alert('An error occurred during restore.');
             }
         }
-
-        /* --- (All other functions: Admin Panel, Drag/Drop, etc.) --- */
-        /* ... (The Admin, Drag/Drop functions are just collapsed here for brevity) ... */
-
         
         async function loadAdminPanelData() {
             const token = localStorage.getItem('token');
@@ -1226,14 +1243,22 @@
                 const data = await response.json();
                 if (response.ok) {
                     renderUserManagementTable(data.users);
-                } else {
-                    alert(`Error loading users: ${data.message}`);
                 }
+
+                const logsRes = await fetch(`${API_BASE_URL}/admin/audit-logs`, {
+                    method: 'GET',
+                    headers: { 'x-auth-token': token }
+                });
+
+                const logsData = await logsRes.json();
+                if (logsRes.ok) renderAuditLogTable(logsData.logs);
+                
             } catch (error) {
                 console.error('Admin load error:', error);
                 alert('An error occurred loading admin data.');
             }
         }
+        
         function renderUserManagementTable(users) {
             const tableBody = document.getElementById('user-management-body');
             tableBody.innerHTML = '';
@@ -1261,6 +1286,7 @@
                 tableBody.appendChild(row);
             });
         }
+        
         async function promptUpdateRole(userId, currentRole) {
             const newRole = prompt(`Enter new role for this user (Admin, Editor, Viewer):`, currentRole);
             if (newRole && newRole !== currentRole && ['Admin', 'Editor', 'Viewer'].includes(newRole)) {
@@ -1288,6 +1314,7 @@
                 alert('Invalid role. Must be one of: Admin, Editor, Viewer');
             }
         }
+        
         async function deleteUser(userId, username) {
             if (confirm(`Are you sure you want to delete the user "${username}"? This cannot be undone.`)) {
                 const token = localStorage.getItem('token');
@@ -1333,7 +1360,6 @@
             });
         }
         
-        // 2. Search for users to share with (with debouncing)
         function searchUsersToShare(query) {
             clearTimeout(shareSearchTimeout); // Clear previous timer
             const resultsBox = document.getElementById('share-search-results');
@@ -1378,7 +1404,6 @@
             }, 300);
         }
         
-        // 3. Handle clicking a user from the search results
         function selectUserToShare(userId, username) {
             if (!confirm(`Share this document with ${username}?`)) {
                 return;
@@ -1390,7 +1415,6 @@
             shareDocument(userId, canView, canEdit);
         }
 
-        // 4. Send the "share" request to the API
         async function shareDocument(userId, canView, canEdit) {
             const token = localStorage.getItem('token');
             const documentId = detailsModal.getAttribute('data-current-doc-id');
@@ -1460,5 +1484,6 @@
 </body>
 
 </html>
+
 
 
