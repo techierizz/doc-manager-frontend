@@ -958,6 +958,29 @@
             return new Date(dateString).toLocaleDateString(undefined, options);
         }
 
+        async function revokePermission(userId, username) {
+            if (!confirm(`Are you sure you want to remove access for ${username}?`)) return;
+            const token = localStorage.getItem('token');
+            const documentId = detailsModal.getAttribute('data-current-doc-id');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/documents/${documentId}/permissions/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'x-auth-token': token }
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    const docTitle = document.getElementById('modal-doc-title').textContent;
+                    showDocumentDetails(documentId, docTitle);
+                } else {
+                    alert(`Error: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Revoke error:', error);
+            }
+        }
+
         
         const adminTabs = document.querySelectorAll('.tab-content');
         const adminTabLinks = document.querySelectorAll('.tab-link');
@@ -1304,7 +1327,7 @@
                 row.innerHTML = `
                     <td>${p.username}</td>
                     <td>${perms.join(', ')}</td>
-                    <td><button class="btn btn-danger btn-sm" disabled>Remove</button></td>
+                    <td><button class="btn btn-danger btn-sm" onclick="revokePermission(${p.user_id}, '${p.username}')">>Remove</button></td>
                 `;
                 listBody.appendChild(row);
             });
@@ -1437,4 +1460,5 @@
 </body>
 
 </html>
+
 
