@@ -704,6 +704,7 @@
                             <th>File Name</th>
                             <th>Uploaded By</th>
                             <th>Date</th>
+                            <th>Comment</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -908,6 +909,12 @@
         
         
         async function searchDocuments() { /* ... (Same as before) ... */ 
+            
+            const searchBtn = document.querySelector('#search-page .btn');
+            const originalText = searchBtn.textContent;
+            searchBtn.textContent = 'Searching...'; // Feedback
+            searchBtn.disabled = true;
+            
             const token = localStorage.getItem('token');
             const params = new URLSearchParams();
             if (document.getElementById('search-bar').value) params.append('keyword', document.getElementById('search-bar').value);
@@ -931,6 +938,9 @@
                 console.error('Search error:', error);
                 alert('An error occurred during search.');
             }
+
+            searchBtn.textContent = originalText;
+            searchBtn.disabled = false;
         }
         
         function renderSearchResults(results) { /* ... (Same as before) ... */ 
@@ -1120,6 +1130,7 @@
                     <td>${v.file_name}</td>
                     <td>${v.uploader}</td>
                     <td>${formatDate(v.created_at)}</td>
+                    <td><small>${v.upload_comment || '-'}</small></td>
                     <td>${isCurrent ? '<strong>Current</strong>' : ''}</td>
                     <td>
                         <button class="btn btn-secondary btn-sm" 
@@ -1484,6 +1495,7 @@
 </body>
 
 </html>
+
 
 
 
