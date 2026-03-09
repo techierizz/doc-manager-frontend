@@ -428,6 +428,20 @@
         .share-result-item:hover {
             background: #f0f0f0;
         }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-draft { background-color: #e2e8f0; color: #475569; }     /* Gray */
+        .status-pending { background-color: #fef3c7; color: #92400e; }   /* Yellow/Orange */
+        .status-approved { background-color: #d1fae5; color: #065f46; }  /* Green */
+        .status-rejected { background-color: #fee2e2; color: #991b1b; }  /* Red */
+        
     </style>
         
 </head>
@@ -590,6 +604,7 @@
                     <thead>
                         <tr>
                             <th>File Name</th>
+                            <th>Status</th>
                             <th>Uploader</th>
                             <th>File Type</th>
                             <th>Last Modified</th>
@@ -609,6 +624,7 @@
                 <div class="admin-tabs">
                     <span class="tab-link active" onclick="showAdminTab('user-management', this)">User Management</span>
                     <span class="tab-link" onclick="showAdminTab('audit-log', this)">Audit Log Viewer</span>
+                    <span class="tab-link" onclick="showAdminTab('pending-approvals', this)">Pending Approvals</span>
                 </div>
                 
                 <div id="user-management" class="tab-content active">
@@ -682,6 +698,24 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div id="pending-approvals" class="tab-content">
+                    <h3>Documents Awaiting Approval</h3>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Owner</th>
+                                    <th>File Name</th>
+                                    <th>Date Requested</th>
+                                    <th>Actions</th>
+                                </tr>
+                                <tbody id="pending-list">
+                                </tbody>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
                 
             </div>
             
@@ -695,6 +729,13 @@
             <button class="modal-close" onclick="hideDocumentDetails()">&times;</button>
         </div>
         <div class="modal-body">
+            <div id="status-timeline" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <span id="step-draft" class="status-badge status-draft">1. Draft</span>
+                <span style="color: #cbd5e1; font-weight: bold;">➔</span>
+                <span id="step-pending" class="status-badge status-draft">2. Pending</span>
+                <span style="color: #cbd5e1; font-weight: bold;">➔</span>
+                <span id="step-final" class="status-badge status-draft">3. Final Decision</span>
+            </div>
             <h4>Version History (SRS 4.4)</h4>
             <div class="table-wrapper">
                 <table>
@@ -759,7 +800,10 @@
                         <input type="checkbox" id="share-can-edit" style="margin-left: 10px;"> <label for="share-can-edit">Can Edit</label>
                 </div>
             </div>
+            <hr style="margin: 20px 0;">
+            <div id="modal-action-buttons" style="display: flex; justify-content: flex-end; gap: 10px; padding-bottom: 20px;"></div>
         </div>
+
     </div>
     </div>
 
@@ -952,8 +996,10 @@
             }
             results.forEach(doc => {
                 const row = document.createElement('tr');
+                const statusClass = doc.status ? doc.status.toLowerCase().replace(/\s+/g, '-') : 'draft';
                 row.innerHTML = `
                     <td><span class="doc-row-link" onclick="showDocumentDetails(${doc.document_id}, '${doc.file_name}')">${doc.file_name}</span></td>
+                    <td><span class="status-badge status-${statusClass}">${doc.status || 'Draft'}</span></td>
                     <td>${doc.uploader}</td>
                     <td>${doc.file_type}</td>
                     <td>${formatDate(doc.last_modified)}</td>
@@ -1014,6 +1060,97 @@
             });
         }
 
+        async function requestApproval(docId) {
+            if (!confirm("Are you sure you want to submit this document for Admin approval? You won't be able to edit it while it's pending.")) return;
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_BASE_URL}/documents/${docId}/request-approval`, {
+                    method: 'PATCH',
+                    headers: { 
+                        'x-auth-token': token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert("Approval requested! Your document is now being reviewed.");
+                    const docTitle = document.getElementById('modal-doc-title').textContent;
+                    showDocumentDetails(docId, docTitle);
+                } else {
+                    alert(`Error: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('Request approval error:', error);
+                alert("Failed to connect to the server.");
+            }
+        }
+
+        function updateTimeline(status) {
+            document.getElementById('step-draft').className = 'status-badge status-draft';
+            document.getElementById('step-pending').className = 'status-badge status-draft';
+            document.getElementById('step-final').className = 'status-badge status-draft';
+            
+            if (status === 'Draft') {
+                document.getElementById('step-draft').className = 'status-badge status-pending';
+            } else if (status === 'Pending Approval') {
+                document.getElementById('step-pending').className = 'status-badge status-pending';
+            } else if (status === 'Approved') {
+                document.getElementById('step-final').className = 'status-badge status-approved';
+            } else if (status === 'Rejected') {
+                document.getElementById('step-final').className = 'status-badge status-rejected';
+            }
+        }
+
+        async function loadPendingApprovals() {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE_URL}/admin/pending-approvals`, {
+                method: 'GET',
+                headers: { 'x-auth-token': token }
+            });
+            const data = await res.json();
+            renderPendingTable(data.pending);
+        }
+
+        function renderPendingTable(docs) {
+            const list = document.getElementById('pending-list');
+            list.innerHTML = docs.length ? '' : '<tr><td colspan="4">No pending approvals.</td></tr>';
+    
+            docs.forEach(doc => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${doc.owner}</td>
+                    <td>${doc.file_name}</td>
+                    <td>${new Date(doc.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-success btn-sm" onclick="processDecision(${doc.document_id}, 'Approved')">Approve</button>
+                        <button class="btn btn-danger btn-sm" onclick="processDecision(${doc.document_id}, 'Rejected')">Reject</button>
+                    </td>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        async function processDecision(docId, decision) {
+            const comment = prompt(`Reason for ${decision}:`);
+            const token = localStorage.getItem('token');
+    
+            const res = await fetch(`${API_BASE_URL}/admin/approve/${docId}`, {
+                method: 'PATCH',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-auth-token': token 
+                },
+                body: JSON.stringify({ status: decision, comment })
+            });
+
+            if (res.ok) {
+                alert(`Document ${decision}`);
+                loadPendingApprovals(); // Refresh list
+            }
+        }
+
+        
         
         const adminTabs = document.querySelectorAll('.tab-content');
         const adminTabLinks = document.querySelectorAll('.tab-link');
@@ -1024,6 +1161,8 @@
             tabElement.classList.add('active');
             if (tabId === 'user-management') {
                 loadAdminPanelData();
+            } else if (tabId === 'pending-approvals') {
+                loadPendingApprovals(); 
             }
         }
         
@@ -1065,6 +1204,11 @@
         
         async function showDocumentDetails(documentId, fileName) { /* ... (Same as before) ... */ 
             const token = localStorage.getItem('token');
+            const detailsModal = document.getElementById('details-modal');
+            const actionButtons = document.getElementById('modal-action-buttons');
+
+            if (actionButtons) actionButtons.innerHTML = '';
+            
             document.getElementById('modal-doc-title').textContent = fileName;
             detailsModal.setAttribute('data-current-doc-id', documentId);
 
@@ -1080,9 +1224,30 @@
                     method: 'GET',
                     headers: { 'x-auth-token': token }
                 });
-                const [versionsResponse, permissionsResponse] = await Promise.all([versionsPromise, permissionsPromise]);
+                const docInfoPromise = fetch(`${API_BASE_URL}/documents/${documentId}`, {
+                    method: 'GET',
+                    headers: { 'x-auth-token': token }
+                });
+                const [versionsResponse, permissionsResponse, docInfoResponse] = await Promise.all([versionsPromise, permissionsPromise, docInfoPromise]);
                 const versionsData = await versionsResponse.json();
                 const permissionsData = await permissionsResponse.json();
+                const docInfoData = await docInfoResponse.json();
+
+                if (docInfoResponse.ok && actionButtons) {
+                    if (docInfoData.status === 'Draft' && docInfoData.isOwner) {
+                        const reqBtn = document.createElement('button');
+                        reqBtn.className = 'btn btn-primary';
+                        reqBtn.style.marginRight = '10px';
+                        reqBtn.textContent = 'Request Admin Approval';
+                        reqBtn.onclick = () => requestApproval(documentId);
+                        actionButtons.appendChild(reqBtn);
+                    }
+            
+                    if (typeof updateTimeline === "function") {
+                        updateTimeline(docInfoData.status);
+                    }
+                }
+                
                 if (versionsResponse.ok) {
                     renderVersionHistory(versionsData.versions);
                 } else {
@@ -1495,6 +1660,7 @@
 </body>
 
 </html>
+
 
 
 
