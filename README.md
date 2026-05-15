@@ -6,16 +6,6 @@
 
 Secure • Scalable • Version Controlled • Audit-Driven
 
-<br>
-
-[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)]()
-[![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)]()
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)]()
-[![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)]()
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)]()
-
-<br>
-
 ### 🔗 Links
 
 [Frontend Repository](https://github.com/techierizz/doc-manager-frontend) •
@@ -67,8 +57,6 @@ Granular authorization layers for:
 
 ensuring secure and controlled document access.
 
----
-
 ## Automated Version Control
 
 Every modification automatically creates:
@@ -77,8 +65,6 @@ Every modification automatically creates:
 - rollback states
 
 allowing safe restoration of previous versions.
-
----
 
 ## Intelligent Audit Logging
 
@@ -91,8 +77,6 @@ Tracks:
 
 for operational transparency and accountability.
 
----
-
 ## Secure Authentication System
 
 Implemented using:
@@ -102,8 +86,6 @@ Implemented using:
 
 to secure user sessions and access layers.
 
----
-
 ## Metadata-Based Search Engine
 
 Supports:
@@ -112,8 +94,6 @@ Supports:
 - optimized document retrieval
 
 for efficient workflow navigation.
-
----
 
 ## High-Performance File Operations
 
